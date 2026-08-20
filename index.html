@@ -245,7 +245,7 @@ is also in the repository as <code>RECIPE.md</code>.</p>
 <textarea id="mdbox" readonly aria-label="Markdown source"></textarea>
 
 <hr class="rule">
-<p class="foot">Source for this page: <a id="repolink" href="__REPO__">__REPO__</a><br>
+<p class="foot">Source for this page: <span id="repolink">repository link added on publication</span><br>
 The illustrations are public domain, with no known copyright restrictions; attribution to the
 British Library is expected practice rather than a legal condition. Nothing in the collection has
 been reviewed for offensive content, and colonial-era publishing is heavily represented. Queries and
@@ -373,7 +373,11 @@ $("copy").onclick = async function(){
     const res = await fetch("RECIPE.md");
     if (!res.ok) throw new Error(res.status);
     md = await res.text();
-  } catch (e){ st.textContent = "Could not read RECIPE.md."; return; }
+  } catch (e){
+    st.innerHTML = 'Could not read the file; open <a href="RECIPE.md">RECIPE.md</a> directly ' +
+                   '(fetch is blocked when this page is opened from disk rather than served).';
+    return;
+  }
   try {
     await navigator.clipboard.writeText(md);
     st.textContent = "Copied.";
