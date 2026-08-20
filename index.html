@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>A Million Cutout Engravings</title>
-<meta name="description" content="1.08 million public-domain British Library book illustrations, masked into cutouts and searchable by description.">
+<meta name="description" content="Search 1.08 million public-domain British Library book illustrations by description, and pull any one out as a clean cutout.">
 <style>
 @font-face{font-family:"Latin Modern";src:url("fonts/LM-regular.woff2") format("woff2");
            font-weight:400; font-style:normal; font-display:swap}
@@ -15,166 +15,156 @@
 @font-face{font-family:"Latin Modern";src:url("fonts/LM-bold-italic.woff2") format("woff2");
            font-weight:700; font-style:italic; font-display:swap}
 
-/* A pdflatex article, rendered in a browser: paper is white in every theme. */
 /* Palette carried over from the Typst/Beamer figure house style. */
 :root{
-  --paper:#FFFFFF; --ink:#000000; --link:#00008B;
+  --paper:#FFFFFF; --ink:#1A1A1A; --link:#0A3D91;
   --edge:#555555;   /* cEdge -- rules, borders */
   --gray:#ECECEC;   /* cCdx  -- data, verbatim */
   --mark:#FFE89A;   /* cMark -- highlight tag */
   --warn:#FBD9D2;   /* cWarn -- degraded */
+  --soft:#767676;   /* secondary text */
 }
 *{box-sizing:border-box}
-html{background:#8C8C8C}
 body{
-  margin:0 auto; max-width:47rem; padding:clamp(2.5rem,6vw,5rem) clamp(1.4rem,6vw,5.5rem) 4rem;
+  margin:0 auto; max-width:52rem; padding:2rem clamp(1.1rem,4vw,2.4rem) 4rem;
   background:var(--paper); color:var(--ink);
-  font:400 18px/1.42 "Latin Modern", "Latin Modern Roman", "CMU Serif", Georgia, serif;
-  text-align:justify; hyphens:auto; -webkit-hyphens:auto;
-  box-shadow:0 0 22px rgba(0,0,0,.35);
+  font:400 18px/1.5 "Latin Modern","CMU Serif",Georgia,serif;
 }
-@media (max-width:600px){ html{background:var(--paper)} body{box-shadow:none} }
-
-/* \maketitle */
-.titleblock{text-align:center; margin-bottom:2.6rem}
-.titleblock h1{font-size:1.85rem; font-weight:700; line-height:1.2; margin:0 0 .55rem; hyphens:none}
-.titleblock .subtitle{font-size:1.1rem; font-style:italic; margin:0 0 1rem}
-.titleblock .date{font-size:1rem; margin:0}
-
-/* sectioning, numbered like article.cls */
-body{counter-reset:section}
-h2{counter-reset:subsection; counter-increment:section;
-   font-size:1.3rem; font-weight:700; margin:2.1rem 0 .55rem; text-align:left; hyphens:none}
-h2::before{content:counter(section) "\00a0\00a0"}
-h3{counter-increment:subsection; font-size:1.08rem; font-weight:700;
-   margin:1.5rem 0 .4rem; text-align:left; hyphens:none}
-h3::before{content:counter(section) "." counter(subsection) "\00a0\00a0"}
-h2.nonum{counter-increment:none}
-h2.nonum::before{content:none}
-
-p{margin:0 0 .75rem}
-p + p{text-indent:1.5em; margin-top:-.35rem}
+h1{font-size:1.95rem; font-weight:700; line-height:1.15; margin:0}
+h2{font-size:1.22rem; font-weight:700; margin:2.2rem 0 .6rem}
+h3{font-size:1.03rem; font-weight:700; margin:1.5rem 0 .35rem}
+p{margin:0 0 .8rem}
 a{color:var(--link); text-decoration:none}
 a:hover{text-decoration:underline}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
-  outline:1.5px solid var(--link); outline-offset:2px}
+  outline:2px solid var(--link); outline-offset:2px}
 
-/* itemize: one item per line, always */
-ul{list-style:none; margin:.4rem 0 1rem; padding:0; display:block}
-ul li{display:list-item; position:relative; padding-left:1.6em; margin:.34rem 0; text-align:justify}
-ul li::before{content:"\2022"; position:absolute; left:.45em; top:0}
-ul ul{margin:.2rem 0 .2rem}
-ol{margin:.4rem 0 1rem; padding-left:1.9em}
-ol li{margin:.34rem 0}
+header{margin-bottom:1.3rem}
+.subtitle{font-size:1.06rem; font-style:italic; color:var(--soft); margin:.4rem 0 0; max-width:46rem}
 
-/* verbatim */
-pre{margin:.7rem 0 1rem; padding:.7rem .85rem; overflow-x:auto;
-    border:0.5pt solid var(--edge); background:var(--gray); text-align:left; hyphens:none}
-code{font-family:"SF Mono",ui-monospace,"Latin Modern Mono",Menlo,monospace; font-size:.78em}
-p code,li code{background:var(--gray); padding:.05em .2em}
-.small{font-size:.86em}
+ul{list-style:none; margin:.3rem 0 1rem; padding:0}
+ul li{position:relative; padding-left:1.5em; margin:.4rem 0}
+ul li::before{content:"\2022"; position:absolute; left:.42em; top:0; color:var(--edge)}
+.links{font-size:.84em; line-height:1.75; color:var(--soft); word-break:break-word}
+.links a{display:inline-block}
 
-/* figure + caption */
-figure.plate{margin:1.5rem 0 1.2rem}
-figcaption.cap{font-size:.86em; text-align:left; margin-top:.7rem; line-height:1.4}
-figcaption.cap b{font-weight:700}
+pre{margin:.6rem 0 1rem; padding:.7rem .85rem; overflow-x:auto;
+    border:1px solid var(--edge); background:var(--gray)}
+code{font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.76em}
+p code,li code{background:var(--gray); padding:.05em .22em}
 
-/* results strip */
-.strip{display:flex; gap:.9rem; overflow-x:auto; padding:.3rem .1rem .8rem; scroll-snap-type:x mandatory;
-       scroll-behavior:smooth; border-top:0.5pt solid var(--edge); border-bottom:0.5pt solid var(--edge)}
+/* the demo, first thing on the page */
+.demo{border-top:1px solid var(--edge); border-bottom:1px solid var(--edge);
+      padding:1rem 0 .9rem; margin-bottom:1.6rem}
+form{display:flex; gap:.5rem; flex-wrap:wrap; align-items:flex-end; margin:0 0 .6rem}
+.field{display:flex; flex-direction:column; gap:.15rem; font-size:.78em; color:var(--soft)}
+.field.grow{flex:1 1 250px}
+input,select,button{font-family:inherit; font-size:.94rem; color:var(--ink); background:var(--paper);
+                    border:1px solid var(--edge); border-radius:2px; padding:.36rem .45rem}
+input,select{width:100%}
+button{cursor:pointer; padding:.38rem .75rem}
+button:hover{background:var(--gray)}
+button:disabled{color:var(--soft); cursor:default}
+.status{font-size:.8em; font-style:italic; color:var(--soft); min-height:1.2em; margin:0 0 .5rem}
+
+.strip{display:flex; gap:1rem; overflow-x:auto; padding:.2rem .1rem .6rem;
+       scroll-snap-type:x mandatory; scroll-behavior:smooth}
 @media (prefers-reduced-motion:reduce){.strip{scroll-behavior:auto}}
-.strip figure{flex:0 0 176px; scroll-snap-align:start; margin:0; text-align:center}
-.cell{position:relative; height:158px; display:flex; align-items:flex-end; justify-content:center;
-      padding:.35rem}
+.strip figure{flex:0 0 172px; scroll-snap-align:start; margin:0; text-align:center}
+.cell{position:relative; height:152px; display:flex; align-items:flex-end; justify-content:center; padding:.3rem}
 .cell img{max-width:100%; max-height:100%; width:auto; height:auto; opacity:0; transition:opacity .2s}
 figure.done .cell img{opacity:1}
-.tag{position:absolute; top:2px; left:2px; font-size:.62em; font-style:italic;
-     background:var(--mark); border:0.5pt solid var(--edge); padding:0 2px}
+.tag{position:absolute; top:2px; left:2px; font-size:.6em; font-style:italic;
+     background:var(--mark); border:1px solid var(--edge); padding:0 3px}
 figure.done .tag{display:none}
 figure.done.retried .tag{display:block}
 figure.fallback .tag{display:block; background:var(--warn)}
-.strip figcaption{font-size:.72em; line-height:1.25; text-align:center; margin-top:.3rem; hyphens:none;
+.strip figcaption{font-size:.68em; line-height:1.3; margin-top:.3rem; color:var(--soft);
                   display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden}
+.ctrl{display:flex; gap:.4rem; align-items:center; font-size:.78em; color:var(--soft)}
+.hint{font-size:.8em; color:var(--soft); margin:.55rem 0 0}
 
-/* controls, kept as plain as the document allows */
-form{display:flex; gap:.5rem; flex-wrap:wrap; align-items:flex-end; margin:.8rem 0 .6rem}
-.field{display:flex; flex-direction:column; gap:.15rem; font-size:.8em}
-.field.grow{flex:1 1 260px}
-input,select,button{font-family:inherit; font-size:.92rem; color:var(--ink); background:var(--paper);
-                    border:0.5pt solid var(--edge); border-radius:0; padding:.32rem .4rem}
-input,select{width:100%}
-button{cursor:pointer; padding:.34rem .7rem}
-button:hover{background:var(--gray)}
-button:disabled{color:#888; cursor:default}
-.status{font-size:.8em; font-style:italic; color:var(--edge); min-height:1.2em; text-align:left}
-.ctrl{display:flex; gap:.4rem; align-items:center; margin-top:.5rem; font-size:.8em}
-
-hr.rule{border:0; border-top:0.5pt solid var(--ink); margin:2.4rem 0 1rem}
-.foot{font-size:.82em; line-height:1.45}
+hr.rule{border:0; border-top:1px solid var(--edge); margin:2.4rem 0 1rem}
+.foot{font-size:.8em; line-height:1.6; color:var(--soft)}
 #mdbox{display:none; width:100%; height:170px; margin-top:.6rem; font-family:ui-monospace,Menlo,monospace;
-       font-size:.72em; border:0.5pt solid var(--edge); padding:.5rem}
+       font-size:.72em; border:1px solid var(--edge); padding:.5rem}
 </style>
 </head>
 <body>
 
-<div class="titleblock">
+<header>
   <h1>A Million Cutout Engravings</h1>
-  <p class="subtitle">Public-domain book illustrations, masked and searchable by description</p>
-  <p class="date">20 August 2026</p>
-</div>
+  <p class="subtitle">Every illustration the British Library cut out of its scanned books, searchable
+  by describing it &mdash; and liftable off the page as clip art.</p>
+</header>
 
-<h2>Summary</h2>
-<ul>
-  <li>The British Library, with Microsoft, digitised 49,455 books published c.&nbsp;1510&ndash;1900 and released <b>1,080,814</b> illustrations cut from their pages into the public domain.</li>
-  <li>The cutting was done by software, so the crops are loose: body text above the picture, a printed caption below, the edge of the facing page down one side.</li>
-  <li>As of August 2026, <b>1,019,266</b> of them carry a predicted <b>mask</b> &mdash; the outline of the picture within its crop. The engraving lifts off the page; the text stays behind.</li>
-  <li>Total compute to outline the entire collection: <b>$3.24</b>.</li>
-  <li>There are <b>no subject tags</b>. Each image instead has a numeric fingerprint of its content, and typed phrases are matched against those fingerprints.</li>
-  <li>A public search service answers such a query in about <b>half a second</b> and composites cutouts on demand, so nothing needs downloading. The demonstration in section 2 runs against it live.</li>
-  <li>The masks are model predictions and have not been checked by hand; publication dates are unreliable at the edges; the 1890s alone account for a third of the corpus.</li>
-  <li>Announcement of the masking work:
-    <a href="https://www.linkedin.com/feed/update/urn:li:activity:7496149798677557248/">https://www.linkedin.com/feed/update/urn:li:activity:7496149798677557248/</a></li>
-  <li>Dataset: <a href="https://huggingface.co/datasets/biglam/british-library-book-images">https://huggingface.co/datasets/biglam/british-library-book-images</a></li>
-  <li>Search service: <a href="https://huggingface.co/spaces/davanstrien/bl-images-search">https://huggingface.co/spaces/davanstrien/bl-images-search</a></li>
-  <li>Mask model: <a href="https://huggingface.co/davanstrien/bl-crop-tighten-rfdetrseg-clip10">https://huggingface.co/davanstrien/bl-crop-tighten-rfdetrseg-clip10</a></li>
-  <li>Page text of the same books: <a href="https://huggingface.co/datasets/biglam/blbooks-parquet">https://huggingface.co/datasets/biglam/blbooks-parquet</a></li>
-</ul>
-
-<h2>A live query</h2>
-<p>The strip below is fetched from the search service by this page as it loads. Nothing was
-downloaded in advance and no server sits in between: the query goes from the browser straight to the
-service, which returns matches ranked by similarity and cuts out each one on request. The seed query
-is <i>a platypus</i>; substitute anything.</p>
-
-<form id="form">
-  <div class="field grow"><label for="q">Description</label>
-    <input id="q" value="a platypus" autocomplete="off" spellcheck="false"></div>
-  <div class="field"><label for="coll">Collection</label>
-    <select id="coll">
-      <option value="all" selected>all</option>
-      <option value="plates">plates</option>
-      <option value="medium">medium</option>
-      <option value="embellishments">embellishments</option>
-      <option value="covers">covers</option>
-    </select></div>
-  <div class="field"><label for="k">Results</label>
-    <input id="k" type="number" min="1" max="60" value="8" style="width:4.5em"></div>
-  <button type="submit" id="go">Search</button>
-  <button type="button" id="mode" aria-pressed="true">Show raw crops</button>
-</form>
-<p class="status" id="status">Querying&hellip;</p>
-
-<figure class="plate">
+<div class="demo">
+  <form id="form">
+    <div class="field grow"><label for="q">Describe a picture</label>
+      <input id="q" value="a platypus" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="coll">Collection</label>
+      <select id="coll">
+        <option value="all" selected>all</option>
+        <option value="plates">plates</option>
+        <option value="medium">medium</option>
+        <option value="embellishments">embellishments</option>
+        <option value="covers">covers</option>
+      </select></div>
+    <div class="field"><label for="k">Results</label>
+      <input id="k" type="number" min="1" max="60" value="8" style="width:4.4em"></div>
+    <button type="submit" id="go">Search</button>
+    <button type="button" id="mode" aria-pressed="true">Show raw crops</button>
+  </form>
+  <p class="status" id="status">Querying&hellip;</p>
   <div class="strip" id="strip" tabindex="0" aria-label="Search results, scrollable"></div>
   <div class="ctrl">
     <button type="button" id="prev" aria-label="Scroll left">&larr;</button>
     <button type="button" id="next" aria-label="Scroll right">&rarr;</button>
     <span id="count"></span>
   </div>
-  <figcaption class="cap"><b>Figure 1:</b> Live results, each masked along its predicted outline and
-  composited on request. Click any one for the full-resolution cutout. Captions give the year, the
-  collection it sits in, and the book it was cut from.</figcaption>
-</figure>
+  <p class="hint">Live, from your browser. Click any result for the full-resolution cutout; the
+  toggle shows the loose crop it was lifted out of.</p>
+</div>
+
+<h2>What you can do with it</h2>
+<ul>
+  <li><b>Find pictures by describing them.</b> Nothing here is tagged or catalogued by subject, yet
+    &ldquo;a platypus&rdquo; works, and so does &ldquo;ducks swimming on a pond&rdquo; or
+    &ldquo;a hot air balloon&rdquo;. Matching is on the content of the image itself.</li>
+  <li><b>Lift an engraving straight off the page.</b> Each result comes back masked, with the body
+    text, caption and page edge that surrounded it removed &mdash; usable as public-domain clip art
+    without any tracing or cleanup.</li>
+  <li><b>Use anything you find, for anything.</b> The whole collection is public domain, so there is
+    no licence to clear and no generated-image ambiguity to explain.</li>
+  <li><b>Query it without downloading it.</b> A public service answers a search in about half a
+    second and composites cutouts on demand; the images themselves run to 621&nbsp;GB and can stay
+    where they are.</li>
+  <li><b>Or take the data and do your own.</b> The masks, the vectors behind the search, and the
+    page text of the same books are all published files you can read in place with SQL. See the
+    recipes below.</li>
+</ul>
+
+<h2>Where it comes from</h2>
+<ul>
+  <li>The British Library, with Microsoft, digitised 49,455 books published c.&nbsp;1510&ndash;1900
+    and released <b>1,080,814</b> pictures cut from their pages into the public domain.</li>
+  <li>The cutting was done by software, so the crops are loose: body text above the picture, a
+    printed caption below, the edge of the facing page down one side.</li>
+  <li>As of August 2026, <b>1,019,266</b> of them carry a predicted <b>mask</b> &mdash; the outline
+    of the picture within its crop. Total compute to outline the collection: <b>$3.24</b>.</li>
+  <li>Search works by fingerprinting every image as a vector and embedding your phrase into the same
+    space, so the vocabulary is open rather than a fixed tag list.</li>
+  <li>Caveats: the masks are model predictions, not hand-checked; publication dates are unreliable
+    at the edges; and the 1890s alone account for a third of the corpus, so this records what one
+    institution digitised rather than what was printed.</li>
+</ul>
+<p class="links">
+  Announcement: <a href="https://www.linkedin.com/feed/update/urn:li:activity:7496149798677557248/">https://www.linkedin.com/feed/update/urn:li:activity:7496149798677557248/</a><br>
+  Dataset: <a href="https://huggingface.co/datasets/biglam/british-library-book-images">https://huggingface.co/datasets/biglam/british-library-book-images</a><br>
+  Search service: <a href="https://huggingface.co/spaces/davanstrien/bl-images-search">https://huggingface.co/spaces/davanstrien/bl-images-search</a><br>
+  Mask model: <a href="https://huggingface.co/davanstrien/bl-crop-tighten-rfdetrseg-clip10">https://huggingface.co/davanstrien/bl-crop-tighten-rfdetrseg-clip10</a><br>
+  Page text of the same books: <a href="https://huggingface.co/datasets/biglam/blbooks-parquet">https://huggingface.co/datasets/biglam/blbooks-parquet</a>
+</p>
 
 <h2>Access recipes</h2>
 
@@ -191,14 +181,14 @@ is <i>a platypus</i>; substitute anything.</p>
     joined on <code>fname</code>: <code>objects</code> (<code>bbox</code>, <code>score</code>,
     <code>area</code>, <code>rectangularity</code>) and <code>masks_rle</code>, COCO RLE in the full
     source frame. 3.96&nbsp;GB. <code>covers</code> is excluded, the model being unable to abstain.</li>
-  <li>Scores were kept down to 0.10 so that consumers choose their own operating point; 59.7% of
-    instances fall below 0.3. Filter at <code>score&nbsp;&gt;=&nbsp;0.3</code> for display. 76% of
-    images resolve to exactly one instance.</li>
+  <li>Scores were kept down to 0.10 so consumers choose their own operating point; 59.7% of instances
+    fall below 0.3. Filter at <code>score&nbsp;&gt;=&nbsp;0.3</code> for display. 76% of images
+    resolve to exactly one instance.</li>
 </ul>
 
 <h3>Vector search over the web, without downloading</h3>
 <p>Cross-origin requests are reflected for any origin, so a static page can call the service
-directly, as this one does.</p>
+directly &mdash; which is what the search above does.</p>
 <pre><code>B=https://davanstrien-bl-images-search.hf.space
 EID=$(curl -s -X POST "$B/gradio_api/call/search" \
   -H 'content-type: application/json' \
@@ -237,15 +227,15 @@ returned thirty-six successes. The 404 comes from a shared database handle used 
 mask that exists is reported missing. Serialise the requests, or run two at a time with exponential
 backoff, and retry rather than trusting the status.</p>
 
-<h2 class="nonum">Appendix: the recipes as Markdown</h2>
-<p>The same material, in a form suitable for pasting into a notebook or a language model. The file
-is also in the repository as <code>RECIPE.md</code>.</p>
+<h2>The recipes as Markdown</h2>
+<p>The same material in a form suitable for pasting into a notebook or a language model, also in the
+repository as <code>RECIPE.md</code>.</p>
 <p><button type="button" id="copy">Copy as Markdown</button>
    <span class="status" id="copystatus" style="display:inline"></span></p>
 <textarea id="mdbox" readonly aria-label="Markdown source"></textarea>
 
 <hr class="rule">
-<p class="foot">Source for this page: <span id="repolink">repository link added on publication</span><br>
+<p class="foot">Source for this page: <a href="https://github.com/mikemccabe/bl-cutouts">https://github.com/mikemccabe/bl-cutouts</a><br>
 The illustrations are public domain, with no known copyright restrictions; attribution to the
 British Library is expected practice rather than a legal condition. Nothing in the collection has
 been reviewed for offensive content, and colonial-era publishing is heavily represented. Queries and
