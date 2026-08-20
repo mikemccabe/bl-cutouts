@@ -101,7 +101,7 @@ hr.rule{border:0; border-top:1px solid var(--edge); margin:2.4rem 0 1rem}
 <div class="demo">
   <form id="form">
     <div class="field grow"><label for="q">Describe a picture</label>
-      <input id="q" value="Duck varieties" autocomplete="off" spellcheck="false"></div>
+      <input id="q" value="duck varieties" autocomplete="off" spellcheck="false"></div>
     <div class="field"><label for="coll">Collection</label>
       <select id="coll">
         <option value="all" selected>all</option>
@@ -188,7 +188,10 @@ hr.rule{border:0; border-top:1px solid var(--edge); margin:2.4rem 0 1rem}
 
 <h3>Vector search over the web, without downloading</h3>
 <p>Cross-origin requests are reflected for any origin, so a static page can call the service
-directly &mdash; which is what the search above does.</p>
+directly &mdash; which is what the search above does. Note that <b>queries are case-sensitive</b>:
+the text tower is called on the raw string, without SigLIP's usual lowercasing step, so
+&ldquo;duck varieties&rdquo; and &ldquo;Duck varieties&rdquo; return entirely different results.
+Lowercase tends to match the training distribution better.</p>
 <pre><code>B=https://davanstrien-bl-images-search.hf.space
 EID=$(curl -s -X POST "$B/gradio_api/call/search" \
   -H 'content-type: application/json' \
