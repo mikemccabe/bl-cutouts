@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A Million Cutout Engravings</title>
+<meta name="description" content="1.08 million public-domain British Library book illustrations, masked into cutouts and searchable by description.">
+<style>
+@font-face{font-family:"Latin Modern";src:url("fonts/LM-regular.woff2") format("woff2");
+           font-weight:400; font-style:normal; font-display:swap}
+@font-face{font-family:"Latin Modern";src:url("fonts/LM-italic.woff2") format("woff2");
+           font-weight:400; font-style:italic; font-display:swap}
+@font-face{font-family:"Latin Modern";src:url("fonts/LM-bold.woff2") format("woff2");
+           font-weight:700; font-style:normal; font-display:swap}
+@font-face{font-family:"Latin Modern";src:url("fonts/LM-bold-italic.woff2") format("woff2");
+           font-weight:700; font-style:italic; font-display:swap}
+
+/* A pdflatex article, rendered in a browser: paper is white in every theme. */
+/* Palette carried over from the Typst/Beamer figure house style. */
+:root{
+  --paper:#FFFFFF; --ink:#000000; --link:#00008B;
+  --edge:#555555;   /* cEdge -- rules, borders */
+  --gray:#ECECEC;   /* cCdx  -- data, verbatim */
+  --mark:#FFE89A;   /* cMark -- highlight tag */
+  --warn:#FBD9D2;   /* cWarn -- degraded */
+}
+*{box-sizing:border-box}
+html{background:#8C8C8C}
+body{
+  margin:0 auto; max-width:47rem; padding:clamp(2.5rem,6vw,5rem) clamp(1.4rem,6vw,5.5rem) 4rem;
+  background:var(--paper); color:var(--ink);
+  font:400 18px/1.42 "Latin Modern", "Latin Modern Roman", "CMU Serif", Georgia, serif;
+  text-align:justify; hyphens:auto; -webkit-hyphens:auto;
+  box-shadow:0 0 22px rgba(0,0,0,.35);
+}
+@media (max-width:600px){ html{background:var(--paper)} body{box-shadow:none} }
+
+/* \maketitle */
+.titleblock{text-align:center; margin-bottom:2.6rem}
+.titleblock h1{font-size:1.85rem; font-weight:700; line-height:1.2; margin:0 0 .55rem; hyphens:none}
+.titleblock .subtitle{font-size:1.1rem; font-style:italic; margin:0 0 1rem}
+.titleblock .date{font-size:1rem; margin:0}
+
+/* sectioning, numbered like article.cls */
+body{counter-reset:section}
+h2{counter-reset:subsection; counter-increment:section;
+   font-size:1.3rem; font-weight:700; margin:2.1rem 0 .55rem; text-align:left; hyphens:none}
+h2::before{content:counter(section) "\00a0\00a0"}
+h3{counter-increment:subsection; font-size:1.08rem; font-weight:700;
+   margin:1.5rem 0 .4rem; text-align:left; hyphens:none}
+h3::before{content:counter(section) "." counter(subsection) "\00a0\00a0"}
+h2.nonum{counter-increment:none}
+h2.nonum::before{content:none}
+
+p{margin:0 0 .75rem}
+p + p{text-indent:1.5em; margin-top:-.35rem}
+a{color:var(--link); text-decoration:none}
+a:hover{text-decoration:underline}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{
+  outline:1.5px solid var(--link); outline-offset:2px}
+
+/* itemize: one item per line, always */
+ul{list-style:none; margin:.4rem 0 1rem; padding:0; display:block}
+ul li{display:list-item; position:relative; padding-left:1.6em; margin:.34rem 0; text-align:justify}
+ul li::before{content:"\2022"; position:absolute; left:.45em; top:0}
+ul ul{margin:.2rem 0 .2rem}
+ol{margin:.4rem 0 1rem; padding-left:1.9em}
+ol li{margin:.34rem 0}
+
+/* verbatim */
+pre{margin:.7rem 0 1rem; padding:.7rem .85rem; overflow-x:auto;
+    border:0.5pt solid var(--edge); background:var(--gray); text-align:left; hyphens:none}
+code{font-family:"SF Mono",ui-monospace,"Latin Modern Mono",Menlo,monospace; font-size:.78em}
+p code,li code{background:var(--gray); padding:.05em .2em}
+.small{font-size:.86em}
+
+/* figure + caption */
+figure.plate{margin:1.5rem 0 1.2rem}
+figcaption.cap{font-size:.86em; text-align:left; margin-top:.7rem; line-height:1.4}
+figcaption.cap b{font-weight:700}
+
+/* results strip */
+.strip{display:flex; gap:.9rem; overflow-x:auto; padding:.3rem .1rem .8rem; scroll-snap-type:x mandatory;
+       scroll-behavior:smooth; border-top:0.5pt solid var(--edge); border-bottom:0.5pt solid var(--edge)}
+@media (prefers-reduced-motion:reduce){.strip{scroll-behavior:auto}}
+.strip figure{flex:0 0 176px; scroll-snap-align:start; margin:0; text-align:center}
+.cell{position:relative; height:158px; display:flex; align-items:flex-end; justify-content:center;
+      padding:.35rem}
+.cell img{max-width:100%; max-height:100%; width:auto; height:auto; opacity:0; transition:opacity .2s}
+figure.done .cell img{opacity:1}
+.tag{position:absolute; top:2px; left:2px; font-size:.62em; font-style:italic;
+     background:var(--mark); border:0.5pt solid var(--edge); padding:0 2px}
+figure.done .tag{display:none}
+figure.done.retried .tag{display:block}
+figure.fallback .tag{display:block; background:var(--warn)}
+.strip figcaption{font-size:.72em; line-height:1.25; text-align:center; margin-top:.3rem; hyphens:none;
+                  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden}
+
+/* controls, kept as plain as the document allows */
+form{display:flex; gap:.5rem; flex-wrap:wrap; align-items:flex-end; margin:.8rem 0 .6rem}
+.field{display:flex; flex-direction:column; gap:.15rem; font-size:.8em}
+.field.grow{flex:1 1 260px}
+input,select,button{font-family:inherit; font-size:.92rem; color:var(--ink); background:var(--paper);
+                    border:0.5pt solid var(--edge); border-radius:0; padding:.32rem .4rem}
+input,select{width:100%}
+button{cursor:pointer; padding:.34rem .7rem}
+button:hover{background:var(--gray)}
+button:disabled{color:#888; cursor:default}
+.status{font-size:.8em; font-style:italic; color:var(--edge); min-height:1.2em; text-align:left}
+.ctrl{display:flex; gap:.4rem; align-items:center; margin-top:.5rem; font-size:.8em}
+
+hr.rule{border:0; border-top:0.5pt solid var(--ink); margin:2.4rem 0 1rem}
+.foot{font-size:.82em; line-height:1.45}
+#mdbox{display:none; width:100%; height:170px; margin-top:.6rem; font-family:ui-monospace,Menlo,monospace;
+       font-size:.72em; border:0.5pt solid var(--edge); padding:.5rem}
+</style>
+</head>
+<body>
+
+<div class="titleblock">
+  <h1>A Million Cutout Engravings</h1>
+  <p class="subtitle">Public-domain book illustrations, masked and searchable by description</p>
+  <p class="date">20 August 2026</p>
+</div>
+
+<h2>Summary</h2>
+<ul>
+  <li>The British Library, with Microsoft, digitised 49,455 books published c.&nbsp;1510&ndash;1900 and released <b>1,080,814</b> illustrations cut from their pages into the public domain.</li>
+  <li>The cutting was done by software, so the crops are loose: body text above the picture, a printed caption below, the edge of the facing page down one side.</li>
+  <li>As of August 2026, <b>1,019,266</b> of them carry a predicted <b>mask</b> &mdash; the outline of the picture within its crop. The engraving lifts off the page; the text stays behind.</li>
+  <li>Total compute to outline the entire collection: <b>$3.24</b>.</li>
+  <li>There are <b>no subject tags</b>. Each image instead has a numeric fingerprint of its content, and typed phrases are matched against those fingerprints.</li>
+  <li>A public search service answers such a query in about <b>half a second</b> and composites cutouts on demand, so nothing needs downloading. The demonstration in section 2 runs against it live.</li>
+  <li>The masks are model predictions and have not been checked by hand; publication dates are unreliable at the edges; the 1890s alone account for a third of the corpus.</li>
+  <li>Announcement of the masking work:
+    <a href="https://www.linkedin.com/feed/update/urn:li:activity:7496149798677557248/">https://www.linkedin.com/feed/update/urn:li:activity:7496149798677557248/</a></li>
+  <li>Dataset: <a href="https://huggingface.co/datasets/biglam/british-library-book-images">https://huggingface.co/datasets/biglam/british-library-book-images</a></li>
+  <li>Search service: <a href="https://huggingface.co/spaces/davanstrien/bl-images-search">https://huggingface.co/spaces/davanstrien/bl-images-search</a></li>
+  <li>Mask model: <a href="https://huggingface.co/davanstrien/bl-crop-tighten-rfdetrseg-clip10">https://huggingface.co/davanstrien/bl-crop-tighten-rfdetrseg-clip10</a></li>
+  <li>Page text of the same books: <a href="https://huggingface.co/datasets/biglam/blbooks-parquet">https://huggingface.co/datasets/biglam/blbooks-parquet</a></li>
+</ul>
+
+<h2>A live query</h2>
+<p>The strip below is fetched from the search service by this page as it loads. Nothing was
+downloaded in advance and no server sits in between: the query goes from the browser straight to the
+service, which returns matches ranked by similarity and cuts out each one on request. The seed query
+is <i>a platypus</i>; substitute anything.</p>
+
+<form id="form">
+  <div class="field grow"><label for="q">Description</label>
+    <input id="q" value="a platypus" autocomplete="off" spellcheck="false"></div>
+  <div class="field"><label for="coll">Collection</label>
+    <select id="coll">
+      <option value="all" selected>all</option>
+      <option value="plates">plates</option>
+      <option value="medium">medium</option>
+      <option value="embellishments">embellishments</option>
+      <option value="covers">covers</option>
+    </select></div>
+  <div class="field"><label for="k">Results</label>
+    <input id="k" type="number" min="1" max="60" value="8" style="width:4.5em"></div>
+  <button type="submit" id="go">Search</button>
+  <button type="button" id="mode" aria-pressed="true">Show raw crops</button>
+</form>
+<p class="status" id="status">Querying&hellip;</p>
+
+<figure class="plate">
+  <div class="strip" id="strip" tabindex="0" aria-label="Search results, scrollable"></div>
+  <div class="ctrl">
+    <button type="button" id="prev" aria-label="Scroll left">&larr;</button>
+    <button type="button" id="next" aria-label="Scroll right">&rarr;</button>
+    <span id="count"></span>
+  </div>
+  <figcaption class="cap"><b>Figure 1:</b> Live results, each masked along its predicted outline and
+  composited on request. Click any one for the full-resolution cutout. Captions give the year, the
+  collection it sits in, and the book it was cut from.</figcaption>
+</figure>
+
+<h2>Access recipes</h2>
+
+<h3>What is published</h3>
+<ul>
+  <li><code>biglam/british-library-book-images</code>, CC0. Image configs <code>embellishments</code>
+    (416,935), <code>plates</code> (385,231), <code>medium</code> (217,100), <code>covers</code>
+    (61,548). Fields <code>image</code>, <code>date</code> (a string), <code>fname</code>,
+    <code>image_type</code>. Full images total about 621&nbsp;GB.</li>
+  <li><code>siglip2_embeddings</code> &mdash; one 1152-dimensional vector per image from
+    <code>google/siglip2-so400m-patch16-256</code>, row-aligned with the image configs. It is a dual
+    encoder, so text embeds into the same space and ranking is cosine similarity. About 5&nbsp;GB.</li>
+  <li><code>crop_masks</code> &mdash; 3,022,916 instances over 1,019,266 images, one row per image,
+    joined on <code>fname</code>: <code>objects</code> (<code>bbox</code>, <code>score</code>,
+    <code>area</code>, <code>rectangularity</code>) and <code>masks_rle</code>, COCO RLE in the full
+    source frame. 3.96&nbsp;GB. <code>covers</code> is excluded, the model being unable to abstain.</li>
+  <li>Scores were kept down to 0.10 so that consumers choose their own operating point; 59.7% of
+    instances fall below 0.3. Filter at <code>score&nbsp;&gt;=&nbsp;0.3</code> for display. 76% of
+    images resolve to exactly one instance.</li>
+</ul>
+
+<h3>Vector search over the web, without downloading</h3>
+<p>Cross-origin requests are reflected for any origin, so a static page can call the service
+directly, as this one does.</p>
+<pre><code>B=https://davanstrien-bl-images-search.hf.space
+EID=$(curl -s -X POST "$B/gradio_api/call/search" \
+  -H 'content-type: application/json' \
+  -d '{"data":["a platypus","all",0,0,8]}' | jq -r .event_id)
+curl -s -N "$B/gradio_api/call/search/$EID"</code></pre>
+<ul>
+  <li><code>/search</code> &mdash; query, collection, year_from, year_to, k</li>
+  <li><code>/search_reference</code> &mdash; adds <code>seed_row</code> and <code>text_weight</code>,
+    blending a phrase with an example image</li>
+  <li><code>/search_feedback</code> &mdash; adds <code>positive_rows</code> and
+    <code>negative_rows</code></li>
+  <li>Schemas at <code>/gradio_api/info</code> and <code>/openapi.json</code></li>
+</ul>
+
+<h3>Single images and cutouts by URL</h3>
+<pre><code>https://huggingface.co/buckets/biglam/bl-images/resolve/{thumbs|full}/{split}/{fname}
+{space}/cutout?fname={fname}&amp;size={thumb|full}    # masked PNG, composited on demand</code></pre>
+<p>Pixels outside the mask come back white rather than transparent. That region is connected to the
+frame, so a flood fill inward from the border converts exactly it to alpha.</p>
+
+<h3>SQL against the parquet, in place</h3>
+<p>DuckDB reads the published files directly with column pruning, so no image bytes move unless the
+<code>image</code> column is selected.</p>
+<pre><code>SELECT i.fname, i.date, m.objects, m.masks_rle
+FROM 'hf://datasets/biglam/british-library-book-images/plates/*.parquet' i
+JOIN 'hf://datasets/biglam/british-library-book-images/crop-masks/plates-*.parquet' m
+USING (fname)</code></pre>
+<p>The leading digits of <code>fname</code> are the British Library system number, which is the
+<code>record_id</code> of the OCR corpus for the same books. The join is at book level, not page
+level.</p>
+
+<h3>One caution: the cutout endpoint is not concurrency-safe</h3>
+<p>Sixteen cutout requests issued in parallel returned a mixture of <code>404 no mask for this
+image</code> and <code>502 thumb fetch failed</code>; the same thirty-six URLs fetched one at a time
+returned thirty-six successes. The 404 comes from a shared database handle used across threads, so a
+mask that exists is reported missing. Serialise the requests, or run two at a time with exponential
+backoff, and retry rather than trusting the status.</p>
+
+<h2 class="nonum">Appendix: the recipes as Markdown</h2>
+<p>The same material, in a form suitable for pasting into a notebook or a language model. The file
+is also in the repository as <code>RECIPE.md</code>.</p>
+<p><button type="button" id="copy">Copy as Markdown</button>
+   <span class="status" id="copystatus" style="display:inline"></span></p>
+<textarea id="mdbox" readonly aria-label="Markdown source"></textarea>
+
+<hr class="rule">
+<p class="foot">Source for this page: <a id="repolink" href="__REPO__">__REPO__</a><br>
+The illustrations are public domain, with no known copyright restrictions; attribution to the
+British Library is expected practice rather than a legal condition. Nothing in the collection has
+been reviewed for offensive content, and colonial-era publishing is heavily represented. Queries and
+cutouts are fetched by your browser from the search service, which sleeps when idle, so the first
+search after a quiet period may take a minute.</p>
+
+<script>
+const B = "https://davanstrien-bl-images-search.hf.space";
+const $ = id => document.getElementById(id);
+const strip = $("strip"), status = $("status");
+let cutoutMode = true, token = 0, rows = [];
+
+$("mode").onclick = function(){
+  cutoutMode = !cutoutMode;
+  this.setAttribute("aria-pressed", String(cutoutMode));
+  this.textContent = cutoutMode ? "Show raw crops" : "Show cutouts";
+  if (rows.length) render(rows);
+};
+$("prev").onclick = () => strip.scrollBy({left: -strip.clientWidth * 0.8});
+$("next").onclick = () => strip.scrollBy({left:  strip.clientWidth * 0.8});
+strip.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight"){ e.preventDefault(); strip.scrollBy({left: 190}); }
+  if (e.key === "ArrowLeft"){ e.preventDefault(); strip.scrollBy({left: -190}); }
+});
+
+$("form").onsubmit = async function(e){
+  e.preventDefault();
+  const mine = ++token;
+  $("go").disabled = true;
+  status.textContent = "Querying…";
+  strip.innerHTML = ""; $("count").textContent = "";
+  try {
+    const r = await search($("q").value.trim(), $("coll").value, +$("k").value || 8);
+    if (mine !== token) return;
+    rows = r.results;
+    status.textContent = "Matched " + rows.length + " of 1,080,814 in " + r.secs + " s.";
+    $("count").textContent = rows.length + " results";
+    render(rows);
+  } catch (err){
+    status.textContent = "Query failed (" + err.message + "). The service may be waking; try again.";
+  } finally { $("go").disabled = false; }
+};
+
+// Two-step call: the POST returns an event id, the GET streams the result.
+async function search(query, collection, k){
+  const post = await fetch(B + "/gradio_api/call/search", {
+    method: "POST", headers: {"content-type": "application/json"},
+    body: JSON.stringify({data: [query, collection, 0, 0, k]})
+  });
+  if (!post.ok) throw new Error("POST " + post.status);
+  const { event_id } = await post.json();
+  const stream = await fetch(B + "/gradio_api/call/search/" + event_id);
+  if (!stream.ok) throw new Error("stream " + stream.status);
+  const lines = (await stream.text()).split("\n").filter(l => l.startsWith("data: "));
+  if (!lines.length) throw new Error("empty response");
+  return JSON.parse(lines[lines.length - 1].slice(6))[0];
+}
+
+function render(list){
+  strip.innerHTML = "";
+  const figs = list.map(r => {
+    const fig = document.createElement("figure");
+    const cut = r.cutout ? B + r.cutout : null;
+    fig.innerHTML = '<a class="cell" href="' + (cut ? cut + "&size=full" : r.full) +
+      '" target="_blank" rel="noopener"><span class="tag">loading</span><img alt=""></a>' +
+      '<figcaption></figcaption>';
+    fig.querySelector("figcaption").textContent =
+      r.year + ", " + r.collection + " — " + (r.title || "untitled");
+    fig.querySelector("img").alt = r.title || "illustration";
+    fig.dataset.src = (cutoutMode && cut) ? cut : r.thumb;
+    fig.dataset.thumb = r.thumb;
+    strip.appendChild(fig);
+    return fig;
+  });
+  loadAll(figs);
+}
+
+// The service composites cutouts on a shared CPU and drops requests issued in
+// parallel, so: two at a time, with backoff.
+const CONCURRENCY = 2, MAX_TRIES = 4;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function loadAll(figs){
+  const queue = figs.slice(), mine = token;
+  let done = 0, retried = 0, fell = 0;
+  const base = status.textContent;
+  const tick = () => {
+    if (mine !== token) return;
+    status.textContent = base + " Loading " + done + "/" + figs.length +
+      (retried ? ", " + retried + " retried" : "") + (fell ? ", " + fell + " unmasked" : "") + ".";
+  };
+  async function one(fig){
+    const img = fig.querySelector("img"), tag = fig.querySelector(".tag");
+    for (let attempt = 1; attempt <= MAX_TRIES; attempt++){
+      tag.textContent = attempt === 1 ? "loading" : "retry " + (attempt - 1);
+      try {
+        const res = await fetch(fig.dataset.src, {cache: "force-cache"});
+        if (res.ok){
+          img.src = URL.createObjectURL(await res.blob());
+          fig.classList.add("done");
+          if (attempt > 1){ fig.classList.add("retried"); tag.textContent = "ok/" + attempt; }
+          return;
+        }
+        const wait = res.status === 429
+          ? (parseFloat(res.headers.get("retry-after")) || 2) * 1000
+          : 400 * 2 ** (attempt - 1) + Math.random() * 300;
+        retried++; tick(); await sleep(wait);
+      } catch (err){ retried++; tick(); await sleep(600 * attempt); }
+    }
+    img.src = fig.dataset.thumb;
+    fig.classList.add("done", "fallback");
+    tag.textContent = "raw crop";
+    fell++;
+  }
+  tick();
+  await Promise.all(Array.from({length: CONCURRENCY}, async () => {
+    while (queue.length && mine === token){ await one(queue.shift()); done++; tick(); }
+  }));
+}
+
+$("copy").onclick = async function(){
+  const st = $("copystatus");
+  let md;
+  try {
+    const res = await fetch("RECIPE.md");
+    if (!res.ok) throw new Error(res.status);
+    md = await res.text();
+  } catch (e){ st.textContent = "Could not read RECIPE.md."; return; }
+  try {
+    await navigator.clipboard.writeText(md);
+    st.textContent = "Copied.";
+    setTimeout(() => { st.textContent = ""; }, 2500);
+  } catch (e){
+    const box = $("mdbox");
+    box.style.display = "block"; box.value = md; box.focus(); box.select();
+    st.textContent = "Clipboard blocked; copy from the box.";
+  }
+};
+
+$("form").dispatchEvent(new Event("submit"));
+</script>
+</body>
+</html>
