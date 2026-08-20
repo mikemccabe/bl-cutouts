@@ -1,5 +1,9 @@
 # A Million Cutout Engravings
 
+### -> Live page: https://mikemccabe.github.io/bl-cutouts/
+
+Search the collection by describing a picture, and pull any result out as a clean cutout.
+
 A one-page report on the British Library's 1,080,814 public-domain book illustrations, which as of
 August 2026 carry model-predicted masks -- so each illustration can be lifted off its scanned page
 as a clean cutout -- and which are searchable by description rather than by tags.
