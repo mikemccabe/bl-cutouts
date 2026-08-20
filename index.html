@@ -323,7 +323,11 @@ function render(list){
   const figs = list.map(r => {
     const fig = document.createElement("figure");
     const cut = r.cutout ? B + r.cutout : null;
-    fig.innerHTML = '<a class="cell" href="' + (cut ? cut + "&size=full" : r.full) +
+    // The link must open whatever the tile is actually showing: the masked
+    // cutout in cutout mode, the unmasked crop in raw mode -- and if the cutout
+    // fails to load and the tile falls back to the crop, the link follows it.
+    const shown = (cutoutMode && cut) ? cut + "&size=full" : r.full;
+    fig.innerHTML = '<a class="cell" href="' + shown +
       '" target="_blank" rel="noopener"><span class="tag">loading</span><img alt=""></a>' +
       '<figcaption></figcaption>';
     fig.querySelector("figcaption").textContent =
@@ -331,6 +335,7 @@ function render(list){
     fig.querySelector("img").alt = r.title || "illustration";
     fig.dataset.src = (cutoutMode && cut) ? cut : r.thumb;
     fig.dataset.thumb = r.thumb;
+    fig.dataset.full = r.full;
     strip.appendChild(fig);
     return fig;
   });
@@ -370,6 +375,7 @@ async function loadAll(figs){
       } catch (err){ retried++; tick(); await sleep(600 * attempt); }
     }
     img.src = fig.dataset.thumb;
+    fig.querySelector("a").href = fig.dataset.full;   // tile is now the crop; link follows it
     fig.classList.add("done", "fallback");
     tag.textContent = "raw crop";
     fell++;
