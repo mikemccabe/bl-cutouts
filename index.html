@@ -140,8 +140,8 @@ hr.rule{border:0; border-top:1px solid var(--edge); margin:2.4rem 0 1rem}
     second and composites cutouts on demand; the images themselves run to 621&nbsp;GB and can stay
     where they are.</li>
   <li><b>Or take the data and do your own.</b> The masks, the vectors behind the search, and the
-    page text of the same books are all published files you can read in place with SQL. See the
-    recipes below.</li>
+    full OCR text of the same books &mdash; 14 million pages of it &mdash; are all published files
+    you can read in place with SQL. See the recipes below.</li>
 </ul>
 
 <h2>Where it comes from</h2>
@@ -216,9 +216,33 @@ frame, so a flood fill inward from the border converts exactly it to alpha.</p>
 FROM 'hf://datasets/biglam/british-library-book-images/plates/*.parquet' i
 JOIN 'hf://datasets/biglam/british-library-book-images/crop-masks/plates-*.parquet' m
 USING (fname)</code></pre>
-<p>The leading digits of <code>fname</code> are the British Library system number, which is the
-<code>record_id</code> of the OCR corpus for the same books. The join is at book level, not page
-level.</p>
+<p>The leading digits of <code>fname</code> are the British Library system number, which is also
+the <code>record_id</code> of the OCR corpus described next.</p>
+
+<h3>The page text of the same books</h3>
+<p>The same digitisation programme also released its OCR, and it is genuinely full text rather than
+metadata or snippets: <code>biglam/blbooks-parquet</code>, <b>14,011,953 rows, one per page</b>,
+about 30&nbsp;GB, CC0. Each row carries the page's <code>text</code> and <code>pg</code> number, an
+<code>empty_pg</code> flag, per-page OCR word confidence as <code>mean_wc_ocr</code> and
+<code>std_wc_ocr</code>, and catalogue metadata (<code>title</code>, <code>name</code>,
+<code>place</code>, <code>Publisher</code>, <code>date</code>, <code>Language_1..4</code>). English,
+German, Spanish, French, Italian and Dutch.</p>
+<pre><code>-- the text of the book an illustration was cut from
+SELECT pg, text
+FROM 'hf://datasets/biglam/blbooks-parquet/data/train-*.parquet'
+WHERE record_id = '002253078'      -- leading digits of the image's fname
+  AND NOT empty_pg
+  AND mean_wc_ocr &gt; 0.8           -- drop the pages OCR made a mess of
+ORDER BY pg</code></pre>
+<p><b>The join is at book level, not page level.</b> An image's <code>fname</code> does encode a page
+position, but it is not guaranteed to line up with the <code>pg</code> column here, so treat
+page-level alignment as something to verify rather than assume. In a 20,000-row sample, 96% of system
+numbers found a match: the remaining 4% are books present in the image release but absent from the
+OCR release.</p>
+<p>Two things to expect. The text is raw OCR of nineteenth-century print with no correction pass &mdash;
+confidence below 0.5 is common and often unusable, which is what the word-confidence columns are for.
+And the metadata is a 2021 catalogue export: several fields are unpopulated much of the time, and the
+language fields were partly determined computationally.</p>
 
 <h3>One caution: the cutout endpoint is not concurrency-safe</h3>
 <p>Sixteen cutout requests issued in parallel returned a mixture of <code>404 no mask for this

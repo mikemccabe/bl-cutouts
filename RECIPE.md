@@ -86,9 +86,47 @@ keep = [i for i, s in enumerate(row["objects"]["score"]) if s >= 0.3]
 m = maskutil.decode(rles[keep[0]])   # HxW numpy array, source frame
 ```
 
-The leading digits of `fname` are the British Library system number = `record_id` in
-`biglam/blbooks-parquet` (14,011,953 pages of OCR text from the same programme). 96% of system
-numbers match in a 20k-row sample. The join is book-level, not page-level.
+The leading digits of `fname` are the British Library system number, which is also the `record_id`
+of the OCR corpus below.
+
+## 4. The page text of the same books
+
+The same digitisation programme released its OCR, and it is full text rather than metadata or
+snippets: `biglam/blbooks-parquet`, 14,011,953 rows (one per page), ~30 GB, CC0. Fields: `text`,
+`pg`, `empty_pg`, `mean_wc_ocr` and `std_wc_ocr` (per-page OCR word confidence), `record_id`, plus
+catalogue metadata - `title`, `name`, `all names`, `place`, `Publisher`, `date`, `raw_date`,
+`Country of publication`, `Language_1..4`, `multi_language`. Languages: en, de, es, fr, it, nl.
+Files at `hf://datasets/biglam/blbooks-parquet/data/train-*.parquet`.
+
+```sql
+-- the text of the book an illustration was cut from
+SELECT pg, text
+FROM 'hf://datasets/biglam/blbooks-parquet/data/train-*.parquet'
+WHERE record_id = '002253078'      -- leading digits of the image's fname
+  AND NOT empty_pg
+  AND mean_wc_ocr > 0.8            -- drop the pages OCR made a mess of
+ORDER BY pg
+```
+
+Joining images to text:
+
+```python
+fname = "002253078_02_000165_1_The Illustrated London Reading Books...jpg"
+record_id = fname.split("_")[0]    # "002253078"
+```
+
+**The join is book-level, not page-level.** `fname` encodes a page position, but it is not
+guaranteed to align with the `pg` column, so verify page-level alignment rather than assuming it.
+96% of system numbers matched in a 20k-row sample; the other 4% are books in the image release but
+absent from the OCR release.
+
+Caveats specific to this corpus:
+
+- Raw OCR of 19th-century print with no correction pass. Confidence below 0.5 is common and often
+  unusable - that is what `mean_wc_ocr` is for. A spot check of a 1690s play returned pages at
+  0.34-0.51.
+- Metadata is a 2021 catalogue export: several fields are unpopulated much of the time, and the
+  language fields were partly determined computationally.
 
 ## Gotcha: the cutout endpoint is not concurrency-safe
 
