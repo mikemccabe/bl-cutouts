@@ -29,11 +29,10 @@ predictions, not hand-checked (97.4% judged acceptable on a 40-image human check
 ## 1. Vector search over the web (no download)
 
 Space: https://huggingface.co/spaces/davanstrien/historical-illustration-search
-(formerly `davanstrien/bl-images-search`; the old `*.hf.space` host no longer answers)
 Base URL: https://davanstrien-historical-illustration-search.hf.space
 CORS is reflected for any origin, including `null`, so a static HTML page can call it directly.
 
-As of September 2026 the Space also indexes 411,385 figure crops from the
+The Space also indexes 411,385 figure crops from the
 Encyclopaedia Britannica, 1,492,199 images in all. `/search_collections` takes a `dataset`
 argument (`all`, `bl`, `britannica`); the older endpoints search both.
 
@@ -141,12 +140,8 @@ Caveats specific to this corpus:
 
 ## Gotcha: go easy on the cutout endpoint
 
-In August 2026, 16 parallel cutout requests returned a mix of `404 no mask for this image` and
-`502 thumb fetch failed`; the same 36 URLs fetched sequentially returned 36x200. The 404 came from
-a shared DuckDB handle used across threads - `fetchone()` returned None and a present mask was
-reported missing. By September the Space capped BL cutouts at two concurrent decodes, and 48
-parallel requests (thumb and full) all returned 200. It is still a shared CPU: run 2 at a time with
-exponential backoff, and retry before trusting a failure.
+The Space composites BL cutouts on a shared CPU, two decodes at a time. Run 2 requests at a time
+with exponential backoff, and retry a failure before trusting it.
 
 ## Caveats
 
