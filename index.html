@@ -136,8 +136,8 @@ hr.rule{border:0; border-top:1px solid var(--edge); margin:2.4rem 0 1rem}
     without any tracing or cleanup.</li>
   <li><b>Use anything you find, for anything.</b> The whole collection is public domain, so there is
     no licence to clear and no generated-image ambiguity to explain.</li>
-  <li><b>Query it without downloading it.</b> A public service answers a search in about half a
-    second and composites cutouts on demand; the images themselves run to 621&nbsp;GB and can stay
+  <li><b>Query it without downloading it.</b> A public service answers a search in a couple of
+    seconds and composites cutouts on demand; the images themselves run to 621&nbsp;GB and can stay
     where they are.</li>
   <li><b>Or take the data and do your own.</b> The masks, the vectors behind the search, and the
     full OCR text of the same books &mdash; 14 million pages of it &mdash; are all published files
@@ -161,7 +161,7 @@ hr.rule{border:0; border-top:1px solid var(--edge); margin:2.4rem 0 1rem}
 <p class="links">
   Announcement: <a href="https://www.linkedin.com/feed/update/urn:li:activity:7496149798677557248/">https://www.linkedin.com/feed/update/urn:li:activity:7496149798677557248/</a><br>
   Dataset: <a href="https://huggingface.co/datasets/biglam/british-library-book-images">https://huggingface.co/datasets/biglam/british-library-book-images</a><br>
-  Search service: <a href="https://huggingface.co/spaces/davanstrien/bl-images-search">https://huggingface.co/spaces/davanstrien/bl-images-search</a><br>
+  Search service: <a href="https://huggingface.co/spaces/davanstrien/historical-illustration-search">https://huggingface.co/spaces/davanstrien/historical-illustration-search</a><br>
   Mask model: <a href="https://huggingface.co/davanstrien/bl-crop-tighten-rfdetrseg-clip10">https://huggingface.co/davanstrien/bl-crop-tighten-rfdetrseg-clip10</a><br>
   Page text of the same books: <a href="https://huggingface.co/datasets/biglam/blbooks-parquet">https://huggingface.co/datasets/biglam/blbooks-parquet</a>
 </p>
@@ -192,12 +192,18 @@ directly &mdash; which is what the search above does. Note that <b>queries are c
 the text tower is called on the raw string, without SigLIP's usual lowercasing step, so
 &ldquo;duck varieties&rdquo; and &ldquo;Duck varieties&rdquo; return entirely different results.
 Lowercase tends to match the training distribution better.</p>
-<pre><code>B=https://davanstrien-bl-images-search.hf.space
-EID=$(curl -s -X POST "$B/gradio_api/call/search" \
+<p>As of September 2026 the service also indexes 411,385 figures from the
+Encyclopaedia Britannica, 1,492,199 images in all. <code>/search_collections</code> takes a
+<code>dataset</code> argument (<code>all</code>, <code>bl</code> or <code>britannica</code>); the
+search on this page passes <code>bl</code>. The older endpoints search both.</p>
+<pre><code>B=https://davanstrien-historical-illustration-search.hf.space
+EID=$(curl -s -X POST "$B/gradio_api/call/search_collections" \
   -H 'content-type: application/json' \
-  -d '{"data":["a platypus","all",0,0,8]}' | jq -r .event_id)
-curl -s -N "$B/gradio_api/call/search/$EID"</code></pre>
+  -d '{"data":["a platypus","all",0,0,8,[],[],0.5,"bl"]}' | jq -r .event_id)
+curl -s -N "$B/gradio_api/call/search_collections/$EID"</code></pre>
 <ul>
+  <li><code>/search_collections</code> &mdash; query, collection, year_from, year_to, k,
+    positive_rows, negative_rows, text_weight, dataset</li>
   <li><code>/search</code> &mdash; query, collection, year_from, year_to, k</li>
   <li><code>/search_reference</code> &mdash; adds <code>seed_row</code> and <code>text_weight</code>,
     blending a phrase with an example image</li>
@@ -247,12 +253,12 @@ confidence below 0.5 is common and often unusable, which is what the word-confid
 And the metadata is a 2021 catalogue export: several fields are unpopulated much of the time, and the
 language fields were partly determined computationally.</p>
 
-<h3>One caution: the cutout endpoint is not concurrency-safe</h3>
-<p>Sixteen cutout requests issued in parallel returned a mixture of <code>404 no mask for this
-image</code> and <code>502 thumb fetch failed</code>; the same thirty-six URLs fetched one at a time
-returned thirty-six successes. The 404 comes from a shared database handle used across threads, so a
-mask that exists is reported missing. Serialise the requests, or run two at a time with exponential
-backoff, and retry rather than trusting the status.</p>
+<h3>One caution: go easy on the cutout endpoint</h3>
+<p>In August 2026, sixteen cutout requests issued in parallel returned a mixture of <code>404 no mask
+for this image</code> and <code>502 thumb fetch failed</code>, with a mask that existed reported
+missing. By September the service limited itself to two concurrent decodes, and 48 parallel requests
+all succeeded. It still runs on a shared CPU, so two at a time with backoff remains the polite rate,
+and a failure is worth a retry before it is believed.</p>
 
 <h2>The recipes as Markdown</h2>
 <p>The same material in a form suitable for pasting into a notebook or a language model, also in the
@@ -270,7 +276,7 @@ cutouts are fetched by your browser from the search service, which sleeps when i
 search after a quiet period may take a minute.</p>
 
 <script>
-const B = "https://davanstrien-bl-images-search.hf.space";
+const B = "https://davanstrien-historical-illustration-search.hf.space";
 const $ = id => document.getElementById(id);
 const strip = $("strip"), status = $("status");
 let cutoutMode = true, token = 0, rows = [];
@@ -308,45 +314,48 @@ $("form").onsubmit = async function(e){
 
 // Two-step call: the POST returns an event id, the GET streams the result.
 async function search(query, collection, k){
-  const post = await fetch(B + "/gradio_api/call/search", {
+  const post = await fetch(B + "/gradio_api/call/search_collections", {
     method: "POST", headers: {"content-type": "application/json"},
-    body: JSON.stringify({data: [query, collection, 0, 0, k]})
+    body: JSON.stringify({data: [query, collection, 0, 0, k, [], [], 0.5, "bl"]})
   });
   if (!post.ok) throw new Error("POST " + post.status);
   const { event_id } = await post.json();
-  const stream = await fetch(B + "/gradio_api/call/search/" + event_id);
+  const stream = await fetch(B + "/gradio_api/call/search_collections/" + event_id);
   if (!stream.ok) throw new Error("stream " + stream.status);
   const lines = (await stream.text()).split("\n").filter(l => l.startsWith("data: "));
   if (!lines.length) throw new Error("empty response");
   return JSON.parse(lines[lines.length - 1].slice(6))[0];
 }
 
+// Image fields come back either as full URLs or as paths on the service.
+const abs = u => u && u.startsWith("/") ? B + u : u;
+
 function render(list){
   strip.innerHTML = "";
   const figs = list.map(r => {
     const fig = document.createElement("figure");
-    const cut = r.cutout ? B + r.cutout : null;
+    const cut = abs(r.cutout), thumb = abs(r.thumb), full = abs(r.full);
     // The link must open whatever the tile is actually showing: the masked
     // cutout in cutout mode, the unmasked crop in raw mode -- and if the cutout
     // fails to load and the tile falls back to the crop, the link follows it.
-    const shown = (cutoutMode && cut) ? cut + "&size=full" : r.full;
+    const shown = (cutoutMode && cut) ? cut + "&size=full" : full;
     fig.innerHTML = '<a class="cell" href="' + shown +
       '" target="_blank" rel="noopener"><span class="tag">loading</span><img alt=""></a>' +
       '<figcaption></figcaption>';
     fig.querySelector("figcaption").textContent =
       r.year + ", " + r.collection + " — " + (r.title || "untitled");
     fig.querySelector("img").alt = r.title || "illustration";
-    fig.dataset.src = (cutoutMode && cut) ? cut : r.thumb;
-    fig.dataset.thumb = r.thumb;
-    fig.dataset.full = r.full;
+    fig.dataset.src = (cutoutMode && cut) ? cut : thumb;
+    fig.dataset.thumb = thumb;
+    fig.dataset.full = full;
     strip.appendChild(fig);
     return fig;
   });
   loadAll(figs);
 }
 
-// The service composites cutouts on a shared CPU and drops requests issued in
-// parallel, so: two at a time, with backoff.
+// The service composites cutouts on a shared CPU, two decodes at a time, so
+// request at the same rate, with backoff.
 const CONCURRENCY = 2, MAX_TRIES = 4;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 

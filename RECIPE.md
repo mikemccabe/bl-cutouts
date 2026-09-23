@@ -28,26 +28,37 @@ predictions, not hand-checked (97.4% judged acceptable on a 40-image human check
 
 ## 1. Vector search over the web (no download)
 
-Space: https://huggingface.co/spaces/davanstrien/bl-images-search
-Base URL: https://davanstrien-bl-images-search.hf.space
+Space: https://huggingface.co/spaces/davanstrien/historical-illustration-search
+(formerly `davanstrien/bl-images-search`; the old `*.hf.space` host no longer answers)
+Base URL: https://davanstrien-historical-illustration-search.hf.space
 CORS is reflected for any origin, including `null`, so a static HTML page can call it directly.
 
+As of September 2026 the Space also indexes 411,385 figure crops from the
+Encyclopaedia Britannica, 1,492,199 images in all. `/search_collections` takes a `dataset`
+argument (`all`, `bl`, `britannica`); the older endpoints search both.
+
 ```bash
-B=https://davanstrien-bl-images-search.hf.space
-EID=$(curl -s -X POST "$B/gradio_api/call/search" \
+B=https://davanstrien-historical-illustration-search.hf.space
+EID=$(curl -s -X POST "$B/gradio_api/call/search_collections" \
   -H 'content-type: application/json' \
-  -d '{"data":["a platypus","all",0,0,8]}' | jq -r .event_id)
-curl -s -N "$B/gradio_api/call/search/$EID"
+  -d '{"data":["a platypus","all",0,0,8,[],[],0.5,"bl"]}' | jq -r .event_id)
+curl -s -N "$B/gradio_api/call/search_collections/$EID"
 ```
 
 Endpoints:
 
+- `/search_collections` - query, collection, year_from, year_to, k, positive_rows,
+  negative_rows, text_weight, dataset
 - `/search` - query, collection, year_from, year_to, k
 - `/search_reference` - adds `seed_row`, `text_weight` (blend a phrase with an example image)
 - `/search_feedback` - adds `positive_rows`, `negative_rows` (relevance feedback)
 
-Schema: `/gradio_api/info` and `/openapi.json`. Results carry `row_id`, `thumb`, `full`, `title`,
-`year`, `collection`, `cutout`. Typical latency ~0.5 s.
+Schema: `/gradio_api/info` and `/openapi.json`. Results carry `row_id`, `asset_id`, `dataset`,
+`thumb`, `full`, `title`, `year`, `collection`, `cutout`, `score`. For BL rows `thumb` and `full`
+are bucket URLs and `cutout` is a Space path; Britannica rows return all three as Space paths
+(`/illustration/...`). `row_id` is a temporary index reference; `asset_id` is the durable one.
+Near-identical results (cosine >= 0.95) are collapsed, so a query can return fewer than `k` rows.
+Typical latency 1.5-2.5 s warm.
 
 ## 2. Single images and cutouts by URL
 
@@ -128,13 +139,14 @@ Caveats specific to this corpus:
 - Metadata is a 2021 catalogue export: several fields are unpopulated much of the time, and the
   language fields were partly determined computationally.
 
-## Gotcha: the cutout endpoint is not concurrency-safe
+## Gotcha: go easy on the cutout endpoint
 
-16 parallel cutout requests returned a mix of `404 no mask for this image` and
-`502 thumb fetch failed`; the same 36 URLs fetched sequentially returned 36x200. The 404 comes from
-a shared DuckDB handle used across threads - `fetchone()` returns None and a present mask is
-reported missing. Nothing is actually absent. Serialise, or run 2 at a time with exponential
-backoff, and retry rather than trusting the status code.
+In August 2026, 16 parallel cutout requests returned a mix of `404 no mask for this image` and
+`502 thumb fetch failed`; the same 36 URLs fetched sequentially returned 36x200. The 404 came from
+a shared DuckDB handle used across threads - `fetchone()` returned None and a present mask was
+reported missing. By September the Space capped BL cutouts at two concurrent decodes, and 48
+parallel requests (thumb and full) all returned 200. It is still a shared CPU: run 2 at a time with
+exponential backoff, and retry before trusting a failure.
 
 ## Caveats
 
@@ -153,6 +165,6 @@ https://www.linkedin.com/feed/update/urn:li:activity:7496149798677557248/
 ## Sources
 
 - Dataset: https://huggingface.co/datasets/biglam/british-library-book-images
-- Search Space: https://huggingface.co/spaces/davanstrien/bl-images-search
+- Search Space: https://huggingface.co/spaces/davanstrien/historical-illustration-search
 - Mask model: https://huggingface.co/davanstrien/bl-crop-tighten-rfdetrseg-clip10
 - OCR text: https://huggingface.co/datasets/biglam/blbooks-parquet

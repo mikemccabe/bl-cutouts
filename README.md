@@ -11,14 +11,14 @@ as a clean cutout -- and which are searchable by description rather than by tags
 The page is static and runs its search live in the browser against the public search Space; there is
 no server component and nothing is downloaded in advance.
 
-- `index.html` -- the report; seeded query is "a platypus"
+- `index.html` -- the report; seeded query is "duck varieties"
 - `RECIPE.md` -- the access recipes on their own, for pasting into a notebook or a language model
 - `fonts/` -- Latin Modern (the OpenType Computer Modern), vendored so the page has no CDN dependency
 
 ## Sources
 
 - Dataset: https://huggingface.co/datasets/biglam/british-library-book-images
-- Search Space: https://huggingface.co/spaces/davanstrien/bl-images-search
+- Search Space: https://huggingface.co/spaces/davanstrien/historical-illustration-search
 - Mask model: https://huggingface.co/davanstrien/bl-crop-tighten-rfdetrseg-clip10
 - OCR text of the same books: https://huggingface.co/datasets/biglam/blbooks-parquet
 - Announcement: https://www.linkedin.com/feed/update/urn:li:activity:7496149798677557248/
