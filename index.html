@@ -426,14 +426,14 @@ $("copy").onclick = async function(){
 document.querySelectorAll("a.try").forEach(a => a.onclick = e => {
   e.preventDefault();
   $("q").value = new URL(a.href).searchParams.get("q");
-  $("form").dispatchEvent(new Event("submit"));
+  $("form").requestSubmit();
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   document.querySelector(".demo").scrollIntoView({behavior: still ? "auto" : "smooth"});
 });
 
 const initial = new URLSearchParams(location.search).get("q");
 if (initial) $("q").value = initial;
-$("form").dispatchEvent(new Event("submit"));
+$("form").requestSubmit();
 </script>
 </body>
 </html>
