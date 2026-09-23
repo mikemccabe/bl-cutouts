@@ -109,6 +109,7 @@ hr.rule{border:0; border-top:1px solid var(--edge); margin:2.4rem 0 1rem}
         <option value="medium">medium</option>
         <option value="embellishments">embellishments</option>
         <option value="covers">covers</option>
+        <option value="figures">figures</option>
       </select></div>
     <div class="field"><label for="k">Results</label>
       <input id="k" type="number" min="1" max="60" value="8" style="width:4.4em"></div>
@@ -129,8 +130,9 @@ hr.rule{border:0; border-top:1px solid var(--edge); margin:2.4rem 0 1rem}
 <h2>What you can do with it</h2>
 <ul>
   <li><b>Find pictures by describing them.</b> Nothing here is tagged or catalogued by subject, yet
-    &ldquo;a platypus&rdquo; works, and so does &ldquo;ducks swimming on a pond&rdquo; or
-    &ldquo;a hot air balloon&rdquo;. Matching is on the content of the image itself.</li>
+    <a class="try" href="?q=a+platypus">&ldquo;a platypus&rdquo;</a> works, and so does
+    <a class="try" href="?q=ducks+swimming+on+a+pond">&ldquo;ducks swimming on a pond&rdquo;</a> or
+    <a class="try" href="?q=a+hot+air+balloon">&ldquo;a hot air balloon&rdquo;</a>. Matching is on the content of the image itself.</li>
   <li><b>Lift an engraving straight off the page.</b> Each result comes back masked, with the body
     text, caption and page edge that surrounded it removed &mdash; usable as public-domain clip art
     without any tracing or cleanup.</li>
@@ -195,11 +197,12 @@ Lowercase tends to match the training distribution better.</p>
 <p>The service also indexes 411,385 figures from the
 Encyclopaedia Britannica, 1,492,199 images in all. <code>/search_collections</code> takes a
 <code>dataset</code> argument (<code>all</code>, <code>bl</code> or <code>britannica</code>); the
-search on this page passes <code>bl</code>. The older endpoints search both.</p>
+search on this page passes <code>all</code>, and <code>figures</code> is the Britannica collection.
+The older endpoints search both.</p>
 <pre><code>B=https://davanstrien-historical-illustration-search.hf.space
 EID=$(curl -s -X POST "$B/gradio_api/call/search_collections" \
   -H 'content-type: application/json' \
-  -d '{"data":["a platypus","all",0,0,8,[],[],0.5,"bl"]}' | jq -r .event_id)
+  -d '{"data":["a platypus","all",0,0,8,[],[],0.5,"all"]}' | jq -r .event_id)
 curl -s -N "$B/gradio_api/call/search_collections/$EID"</code></pre>
 <ul>
   <li><code>/search_collections</code> &mdash; query, collection, year_from, year_to, k,
@@ -294,6 +297,7 @@ strip.addEventListener("keydown", e => {
 $("form").onsubmit = async function(e){
   e.preventDefault();
   const mine = ++token;
+  history.replaceState(null, "", "?q=" + encodeURIComponent($("q").value.trim()).replace(/%20/g, "+"));
   $("go").disabled = true;
   status.textContent = "Querying…";
   strip.innerHTML = ""; $("count").textContent = "";
@@ -301,7 +305,7 @@ $("form").onsubmit = async function(e){
     const r = await search($("q").value.trim(), $("coll").value, +$("k").value || 8);
     if (mine !== token) return;
     rows = r.results;
-    status.textContent = "Matched " + rows.length + " of 1,080,814 in " + r.secs + " s.";
+    status.textContent = "Matched " + rows.length + " of 1,492,199 in " + r.secs + " s.";
     $("count").textContent = rows.length + " results";
     render(rows);
   } catch (err){
@@ -313,7 +317,7 @@ $("form").onsubmit = async function(e){
 async function search(query, collection, k){
   const post = await fetch(B + "/gradio_api/call/search_collections", {
     method: "POST", headers: {"content-type": "application/json"},
-    body: JSON.stringify({data: [query, collection, 0, 0, k, [], [], 0.5, "bl"]})
+    body: JSON.stringify({data: [query, collection, 0, 0, k, [], [], 0.5, "all"]})
   });
   if (!post.ok) throw new Error("POST " + post.status);
   const { event_id } = await post.json();
@@ -340,7 +344,7 @@ function render(list){
       '" target="_blank" rel="noopener"><span class="tag">loading</span><img alt=""></a>' +
       '<figcaption></figcaption>';
     fig.querySelector("figcaption").textContent =
-      r.year + ", " + r.collection + " — " + (r.title || "untitled");
+      (r.year > 0 ? r.year + ", " : "") + r.collection + " — " + (r.title || "untitled");
     fig.querySelector("img").alt = r.title || "illustration";
     fig.dataset.src = (cutoutMode && cut) ? cut : thumb;
     fig.dataset.thumb = thumb;
@@ -418,6 +422,17 @@ $("copy").onclick = async function(){
   }
 };
 
+// Example phrases in the text run in the demo above rather than reloading the page.
+document.querySelectorAll("a.try").forEach(a => a.onclick = e => {
+  e.preventDefault();
+  $("q").value = new URL(a.href).searchParams.get("q");
+  $("form").dispatchEvent(new Event("submit"));
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.querySelector(".demo").scrollIntoView({behavior: still ? "auto" : "smooth"});
+});
+
+const initial = new URLSearchParams(location.search).get("q");
+if (initial) $("q").value = initial;
 $("form").dispatchEvent(new Event("submit"));
 </script>
 </body>
