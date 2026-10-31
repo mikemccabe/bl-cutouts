@@ -34,9 +34,10 @@ h1{font-size:1.95rem; font-weight:700; line-height:1.15; margin:0}
 h2{font-size:1.22rem; font-weight:700; margin:2.2rem 0 .6rem}
 h3{font-size:1.03rem; font-weight:700; margin:1.5rem 0 .35rem}
 h2 .anchor, h3 .anchor{
-  margin-left:.35rem; color:var(--soft); text-decoration:none;
+  margin-left:.7rem; color:var(--soft); text-decoration:none;
   font-weight:400; opacity:0; transition:opacity .1s;
 }
+.anchor::before{content:"#"}
 h2:hover .anchor, h3:hover .anchor, .anchor:focus-visible{opacity:1}
 :target{background:var(--mark)}
 p{margin:0 0 .8rem}
@@ -133,7 +134,7 @@ hr.rule{border:0; border-top:1px solid var(--edge); margin:2.4rem 0 1rem}
   toggle shows the loose crop it was lifted out of.</p>
 </div>
 
-<h2 id="what-you-can-do">What you can do with it <a class="anchor" href="#what-you-can-do" aria-label="Link to this section">#</a></h2>
+<h2 id="what-you-can-do">What you can do with it<a class="anchor" href="#what-you-can-do" aria-label="Link to this section"></a></h2>
 <ul>
   <li><b>Find pictures by describing them.</b> Nothing here is tagged or catalogued by subject, yet
     <a class="try" href="?q=a+platypus">&ldquo;a platypus&rdquo;</a> works, and so does
@@ -152,7 +153,7 @@ hr.rule{border:0; border-top:1px solid var(--edge); margin:2.4rem 0 1rem}
     you can read in place with SQL. See the recipes below.</li>
 </ul>
 
-<h2 id="where-it-comes-from">Where it comes from <a class="anchor" href="#where-it-comes-from" aria-label="Link to this section">#</a></h2>
+<h2 id="where-it-comes-from">Where it comes from<a class="anchor" href="#where-it-comes-from" aria-label="Link to this section"></a></h2>
 <ul>
   <li>The British Library, with Microsoft, digitised 49,455 books published c.&nbsp;1510&ndash;1900
     and released <b>1,080,814</b> pictures cut from their pages into the public domain.</li>
@@ -174,9 +175,9 @@ hr.rule{border:0; border-top:1px solid var(--edge); margin:2.4rem 0 1rem}
   Page text of the same books: <a href="https://huggingface.co/datasets/biglam/blbooks-parquet">https://huggingface.co/datasets/biglam/blbooks-parquet</a>
 </p>
 
-<h2 id="access-recipes">Access recipes <a class="anchor" href="#access-recipes" aria-label="Link to this section">#</a></h2>
+<h2 id="access-recipes">Access recipes<a class="anchor" href="#access-recipes" aria-label="Link to this section"></a></h2>
 
-<h3 id="what-is-published">What is published <a class="anchor" href="#what-is-published" aria-label="Link to this section">#</a></h3>
+<h3 id="what-is-published">What is published<a class="anchor" href="#what-is-published" aria-label="Link to this section"></a></h3>
 <ul>
   <li><code>biglam/british-library-book-images</code>, CC0. Image configs <code>embellishments</code>
     (416,935), <code>plates</code> (385,231), <code>medium</code> (217,100), <code>covers</code>
@@ -194,7 +195,7 @@ hr.rule{border:0; border-top:1px solid var(--edge); margin:2.4rem 0 1rem}
     resolve to exactly one instance.</li>
 </ul>
 
-<h3 id="recipe-vector-search">Vector search over the web, without downloading <a class="anchor" href="#recipe-vector-search" aria-label="Link to this section">#</a></h3>
+<h3 id="recipe-vector-search">Vector search over the web, without downloading<a class="anchor" href="#recipe-vector-search" aria-label="Link to this section"></a></h3>
 <p>Cross-origin requests are reflected for any origin, so a static page can call the service
 directly &mdash; which is what the search above does. Note that <b>queries are case-sensitive</b>:
 the text tower is called on the raw string, without SigLIP's usual lowercasing step, so
@@ -221,13 +222,13 @@ curl -s -N "$B/gradio_api/call/search_collections/$EID"</code></pre>
   <li>Schemas at <code>/gradio_api/info</code> and <code>/openapi.json</code></li>
 </ul>
 
-<h3 id="recipe-by-url">Single images and cutouts by URL <a class="anchor" href="#recipe-by-url" aria-label="Link to this section">#</a></h3>
+<h3 id="recipe-by-url">Single images and cutouts by URL<a class="anchor" href="#recipe-by-url" aria-label="Link to this section"></a></h3>
 <pre><code>https://huggingface.co/buckets/biglam/bl-images/resolve/{thumbs|full}/{split}/{fname}
 {space}/cutout?fname={fname}&amp;size={thumb|full}    # masked PNG, composited on demand</code></pre>
 <p>Pixels outside the mask come back white rather than transparent. That region is connected to the
 frame, so a flood fill inward from the border converts exactly it to alpha.</p>
 
-<h3 id="recipe-sql">SQL against the parquet, in place <a class="anchor" href="#recipe-sql" aria-label="Link to this section">#</a></h3>
+<h3 id="recipe-sql">SQL against the parquet, in place<a class="anchor" href="#recipe-sql" aria-label="Link to this section"></a></h3>
 <p>DuckDB reads the published files directly with column pruning, so no image bytes move unless the
 <code>image</code> column is selected.</p>
 <pre><code>SELECT i.fname, i.date, m.objects, m.masks_rle
@@ -237,7 +238,7 @@ USING (fname)</code></pre>
 <p>The leading digits of <code>fname</code> are the British Library system number, which is also
 the <code>record_id</code> of the OCR corpus described next.</p>
 
-<h3 id="recipe-page-text">The page text of the same books <a class="anchor" href="#recipe-page-text" aria-label="Link to this section">#</a></h3>
+<h3 id="recipe-page-text">The page text of the same books<a class="anchor" href="#recipe-page-text" aria-label="Link to this section"></a></h3>
 <p>The same digitisation programme also released its OCR, and it is genuinely full text rather than
 metadata or snippets: <code>biglam/blbooks-parquet</code>, <b>14,011,953 rows, one per page</b>,
 about 30&nbsp;GB, CC0. Each row carries the page's <code>text</code> and <code>pg</code> number, an
@@ -262,11 +263,11 @@ confidence below 0.5 is common and often unusable, which is what the word-confid
 And the metadata is a 2021 catalogue export: several fields are unpopulated much of the time, and the
 language fields were partly determined computationally.</p>
 
-<h3 id="caution-cutout-endpoint">One caution: go easy on the cutout endpoint <a class="anchor" href="#caution-cutout-endpoint" aria-label="Link to this section">#</a></h3>
+<h3 id="caution-cutout-endpoint">One caution: go easy on the cutout endpoint<a class="anchor" href="#caution-cutout-endpoint" aria-label="Link to this section"></a></h3>
 <p>The service composites cutouts on a shared CPU, two decodes at a time. Request at the same rate,
 with exponential backoff, and retry a failure before believing it.</p>
 
-<h2 id="recipes-markdown">The recipes as Markdown <a class="anchor" href="#recipes-markdown" aria-label="Link to this section">#</a></h2>
+<h2 id="recipes-markdown">The recipes as Markdown<a class="anchor" href="#recipes-markdown" aria-label="Link to this section"></a></h2>
 <p>The same material in a form suitable for pasting into a notebook or a language model, also in the
 repository as <code>RECIPE.md</code>.</p>
 <p><button type="button" id="copy">Copy as Markdown</button>
